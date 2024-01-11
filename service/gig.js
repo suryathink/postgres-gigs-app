@@ -16,9 +16,21 @@ const createGig = async (gigData) => {
   return await Gig.create(gigData);
 };
 
-const updateGig = async (gigData) => {
-  return await Gig.update(gigData);
+const updateGig = async (id, updatedData) => {
+  try {
+    const [rowsUpdated] = await Gig.update(updatedData, {
+      where: {
+        id: id,
+      },
+    });
+
+    return rowsUpdated > 0;
+  } catch (error) {
+    console.error("Error in updateGig:", error);
+    return false;
+  }
 };
+
 
 const deleteGig = async (gigID) => {
   try {
@@ -27,8 +39,10 @@ const deleteGig = async (gigID) => {
         id: gigID,
       },
     });
+    return true
   } catch (error) {
     console.error(error);
+    return false
   }
 };
 

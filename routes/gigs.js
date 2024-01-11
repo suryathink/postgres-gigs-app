@@ -11,119 +11,69 @@ const {
 
 const {
   getAllGigs,
-  createGig,
-  updateGig,
-  deleteGig,
   getGigsOnConditions,
 } = require("../service/gig");
+
+const { createGigController, updateGigController ,deleteGigController,getGigsController} = require("../controller/gigController");
+
 const Op = Sequelize.Op;
 const router = express.Router();
 
-// get all gigs
-router.get("/", async (req, res) => {
-  try {
-    const { search } = req.query;
+// get all gigs with search 
 
-    if (search) {
-      const data = await getGigsOnConditions({
-        where: {
-          technologies: {
-            [Op.like]: `%${search}%`,
-          },
-        },
-      });
-      
-      // const data = await Gig.findAll({
-      //   where: {
-      //     technologies: {
-      //       [Op.like]: `%${search}%`,
-      //     },
-      //   },
-      // });
+// router.get("/", async (req, res) => {
+//   try {
+//     const { search } = req.query;
 
-      if (data.length === 0) {
-        return res.status(404).send({
-          message: "No Data With this Query Found",
-        });
-      }
-      res.send(data);
-    } else {
-      const gigs = await getAllGigs();
-      res.send(gigs);
-    }
-  } catch (error) {
-    res.status(500).send({
-      message: "Something went wrong",
-    });
-  }
-});
+//     if (search) {
+//       const data = await getGigsOnConditions({
+//         where: {
+//           [Op.or]: [
+//             {
+//               title: {
+//                 [Op.iLike]: `%${search}%`,
+//               },
+//             },
+//             {
+//               technologies: {
+//                 [Op.iLike]: `%${search}%`,
+//               },
+//             },
+//             {
+//               description: {
+//                 [Op.iLike]: `%${search}%`,
+//               },
+//             },
+//           ],
+//         },
+//       });
+
+//       if (data.length === 0) {
+//         return res.status(404).send({
+//           message: "No Data With this Query Found",
+//         });
+//       }
+//       res.send(data);
+//     } else {
+//       const gigs = await getAllGigs();
+//       res.send(gigs);
+//     }
+//   } catch (error) {
+//     res.status(500).send({
+//       message: "Something went wrong",
+//     });
+//   }
+// });
+
+router.get("/",getGigsController)
 
 // add a gig
-router.post("/add", validateGigFields, async (req, res) => {
-  try {
-    let { title, technologies, budget, description, contact_email } = req.body;
-
-    const data = await createGig({
-      title,
-      technologies,
-      budget,
-      description,
-      contact_email,
-    });
-
-    res.send({
-      message: "Data Added Successfully",
-      data,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      message: "Something went wrong",
-    });
-  }
-});
+router.post("/add", createGigController);
 
 // Update a gig
-router.put("/update/:id", validateUpdateFields, async (req, res) => {
-  try {
-    const { title, technologies, budget, description, contact_email } =
-      req.body;
-
-    const data = await updateGig({
-      title,
-      technologies,
-      budget,
-      description,
-      contact_email,
-    });
-
-    res.send({
-      message: "Gig updated successfully",
-      data: data.dataValues,
-    });
-  } catch (error) {
-    res.status(500).send({
-      message: "Something went wrong in /update/:id route",
-    });
-  }
-});
+router.put("/update/:id", validateUpdateFields, updateGigController);
 
 // Delete
-router.delete("/delete/:id", validateGigID, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const data = await deleteGig(id);
-
-    res.status(200).send({
-      message: "Gig deleted successfully",
-      data,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      message: "Something went wrong",
-    });
-  }
-});
+router.delete("/delete/:id", validateGigID, deleteGigController);
 
 module.exports = router;
