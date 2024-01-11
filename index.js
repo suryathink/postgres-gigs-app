@@ -1,33 +1,28 @@
 const express = require("express");
-const { engine } = require("express-handlebars");
-const bodyParser = require("body-parser");
-const path = require("path");
+const cors = require("cors");
 require("dotenv").config();
 
 const db = require("./config/database");
 
 const app = express();
 
-// Handlebars middleware
-app.engine("handlebars", engine());
-app.set("view engine", "handlebars");
+app.use(cors());
 
-// set static folder
-app.use(express.static(path.join(__dirname, "public")));
-
-// json parser
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
 
 // Gig Routes
 app.use("/gigs", require("./routes/gigs"));
 
+const databaseConnection = async () => {
+  try {
+    await db.authenticate();
+    console.log("Database connected");
+  } catch (error) {
+    console.log("Error", error);
+  }
+};
 
-
-
-db.authenticate()
-  .then(() => console.log("Database Connected..."))
-  .catch((err) => console.log("Error", err));
+databaseConnection();
 
 const PORT = process.env.PORT || 8080;
 
