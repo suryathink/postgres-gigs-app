@@ -5,20 +5,27 @@ const Gig = require("../models/Gig");
 
 const Op = Sequelize.Op;
 const router = express.Router();
+
 // get all gigs
 router.get("/", async (req, res) => {
   try {
-    const { term } = req.query;
+    const { search } = req.query;
 
-    if (term) {
+    if (search) {
       const data = await Gig.findAll({
         where: {
           technologies: {
-            [Op.like]: `%${term}%`
-          }
-        }
+            [Op.like]: `%${search}%`,
+          },
+        },
       });
 
+      if (data.length===0){
+        return res.status(404).send({
+          message:"No Data With this Query Found"
+        })
+      }
+      console.log("data",data)
       res.send(data);
     } else {
       const gigs = await Gig.findAll();
@@ -26,21 +33,18 @@ router.get("/", async (req, res) => {
     }
   } catch (error) {
     res.status(500).send({
-      message: "Something went wrong"
+      message: "Something went wrong",
     });
   }
 });
 
-
-
 // add a gig
 router.post("/add", async (req, res) => {
-  console.log("req.body", req.body);
   try {
-    let { title, technologies, budget, description, contact_email } = await req.body;
-    //   Insert into table
+    let { title, technologies, budget, description, contact_email } =
+      await req.body;
 
-    await Gig.create({
+    const data = await Gig.create({
       title,
       technologies,
       budget,
@@ -48,10 +52,15 @@ router.post("/add", async (req, res) => {
       contact_email,
     });
 
-    // res.redirect('/gigs')
-    res.send("OK");
+    res.send({
+      message: "Data Added Successfully",
+      data,
+    });
   } catch (error) {
     console.log(error);
+    res.status(500).send({
+      message: "Something went wrong",
+    });
   }
 });
 
@@ -59,17 +68,17 @@ router.post("/add", async (req, res) => {
 router.put("/update/:id", async (req, res) => {
   try {
     const gigId = req.params.id;
-    const { title, technologies, budget, description, contact_email } = req.body;
-
-    // Checks if that gig with that id present or not, if not present sends error message
+    const { title, technologies, budget, description, contact_email } =
+      req.body;
+       
+    // checking wheather that gig is present or not, if not sends error message
     const gig = await Gig.findByPk(gigId);
 
     if (!gig) {
       return res.status(404).send({
-        message: "Gig not found"
+        message: "Gig not found",
       });
     }
-
 
     await gig.update({
       title,
@@ -80,43 +89,41 @@ router.put("/update/:id", async (req, res) => {
     });
 
     res.send({
-      message: "Gig updated successfully"
+      message: "Gig updated successfully",
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
-      message: "Something went wrong"
+      message: "Something went wrong",
     });
   }
 });
 
-
-// Delete 
+// Delete
 router.delete("/delete/:id", async (req, res) => {
   try {
     const gigId = req.params.id;
 
-    // checking whether that particular gig is present or not 
+    // checking whether that particular gig is present or not
     const gig = await Gig.findByPk(gigId);
 
     if (!gig) {
       return res.status(404).send({
-        message: "Gig not found"
+        message: "Gig not found",
       });
     }
 
     await gig.destroy();
 
     res.send({
-      message: "Gig deleted successfully"
+      message: "Gig deleted successfully",
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
-      message: "Something went wrong"
+      message: "Something went wrong",
     });
   }
 });
-
 
 module.exports = router;
