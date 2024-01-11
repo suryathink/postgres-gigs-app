@@ -3,6 +3,19 @@ const { Sequelize } = require("sequelize");
 const db = require("../config/database");
 const Gig = require("../models/Gig");
 
+const {
+  validateGigFields,
+  validateGigID,
+  validateUpdateFields,
+} = require("../middlewares/validateGigsFields");
+
+const {
+  getAllGigs,
+  createGig,
+  updateGig,
+  deleteGig,
+  getGigsOnConditions,
+} = require("../service/gig");
 const Op = Sequelize.Op;
 const router = express.Router();
 
@@ -12,23 +25,30 @@ router.get("/", async (req, res) => {
     const { search } = req.query;
 
     if (search) {
-      const data = await Gig.findAll({
+      const data = await getGigsOnConditions({
         where: {
           technologies: {
             [Op.like]: `%${search}%`,
           },
         },
       });
+      
+      // const data = await Gig.findAll({
+      //   where: {
+      //     technologies: {
+      //       [Op.like]: `%${search}%`,
+      //     },
+      //   },
+      // });
 
       if (data.length === 0) {
         return res.status(404).send({
           message: "No Data With this Query Found",
         });
       }
-      console.log("data", data);
       res.send(data);
     } else {
-      const gigs = await Gig.findAll();
+      const gigs = await getAllGigs();
       res.send(gigs);
     }
   } catch (error) {
@@ -39,17 +59,11 @@ router.get("/", async (req, res) => {
 });
 
 // add a gig
-router.post("/add", async (req, res) => {
+router.post("/add", validateGigFields, async (req, res) => {
   try {
     let { title, technologies, budget, description, contact_email } = req.body;
 
-    if (!title || !technologies || !budget || !description || !contact_email) {
-      return res.status(404).send({
-        message: "Bad request ,All Fields Are Required",
-      });
-    }
-
-    const data = await Gig.create({
+    const data = await createGig({
       title,
       technologies,
       budget,
@@ -70,28 +84,12 @@ router.post("/add", async (req, res) => {
 });
 
 // Update a gig
-router.put("/update/:id", async (req, res) => {
+router.put("/update/:id", validateUpdateFields, async (req, res) => {
   try {
-    const gigId = req.params.id;
     const { title, technologies, budget, description, contact_email } =
       req.body;
 
-    // checking wheather that gig is present or not, if not sends error message
-    const gig = await Gig.findByPk(gigId);
-
-    if (!gig) {
-      return res.status(404).send({
-        message: "Gig not found",
-      });
-    }
-
-    if (!title || !technologies || !budget || !description || !contact_email) {
-      return res.status(404).send({
-        message: "Bad request ,All Fields Are Required",
-      });
-    }
-
-    await gig.update({
+    const data = await updateGig({
       title,
       technologies,
       budget,
@@ -101,33 +99,24 @@ router.put("/update/:id", async (req, res) => {
 
     res.send({
       message: "Gig updated successfully",
+      data: data.dataValues,
     });
   } catch (error) {
-    console.log(error);
     res.status(500).send({
-      message: "Something went wrong",
+      message: "Something went wrong in /update/:id route",
     });
   }
 });
 
 // Delete
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:id", validateGigID, async (req, res) => {
   try {
-    const id = req.params.id;
-
-    // checking whether that particular gig is present or not
-    const gig = await Gig.findByPk(id);
-
-    if (!gig) {
-      return res.status(404).send({
-        message: "Gig not found",
-      });
-    }
-
-    await gig.destroy();
+    const { id } = req.params;
+    const data = await deleteGig(id);
 
     res.status(200).send({
       message: "Gig deleted successfully",
+      data,
     });
   } catch (error) {
     console.log(error);
